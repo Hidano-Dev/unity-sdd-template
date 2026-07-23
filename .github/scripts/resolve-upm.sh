@@ -30,14 +30,14 @@ mkdir -p "$PROJECT_DIR/Packages"
   FIRST=true
   for pkg in $PACKAGES; do
     ver=$(curl -sf "https://packages.unity.com/$pkg" | jq -r --arg em "$EDITOR_MM" '
-      def mm: split(".") | [.[0]|tonumber, .[1]|tonumber];
-      .versions | to_entries
+      def mm: tostring | split(".") | [(.[0] // "0" | tonumber? // 0), (.[1] // "0" | tonumber? // 0)];
+      .versions? // {} | if type == "object" then . else {} end | to_entries
       | map(select(.key | test("-") | not))                        # pre/exp 版を除外
-      | map(select(((.value.unity // "0.0") | mm) <= ($em | mm)))   # Editor 要求を満たす版のみ
+      | map(select(((.value.unity? // "0.0") | mm) <= ($em | mm)))  # Editor 要求を満たす版のみ
       | map(.key)
-      | sort_by(split(".") | map(tonumber))
+      | sort_by(split(".") | map(tonumber? // 0))
       | last // empty
-    ')
+    ' 2>/dev/null || true)
     if [ -z "$ver" ]; then
       echo "::error::$pkg に Unity $EDITOR_VER 対応バージョンが見つかりません" >&2
       exit 1
