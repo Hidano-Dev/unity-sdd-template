@@ -63,10 +63,7 @@ crashlytics-build.properties
 
 # Others
 .DS_Store
-.vscode
-.vsconfig
 Recordings
-CLAUDE.md
 .serena
 */UserSettings
 */.idea/
