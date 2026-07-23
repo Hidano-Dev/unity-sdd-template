@@ -3,8 +3,8 @@
 # -----------------------------------------------------------------------------
 # 生成されたリポジトリに常駐する。Actions タブから手動実行し、
 # 指定プロジェクトディレクトリの ProjectVersion.txt を書き換え、
-# UPM パッケージも対象 Editor に適合するバージョンへ揃え直す。
-# ハッシュ (changeset) の指定は不要。
+# manifest.json の公式 UPM パッケージも対象 Editor 適合版へその場更新する
+# (サードパーティ・scopedRegistries は温存)。ハッシュ (changeset) の指定は不要。
 # 存在しないバージョン / 存在しないプロジェクトはエラーで停止する。
 # =============================================================================
 name: Set Unity Version
@@ -38,7 +38,7 @@ jobs:
           fi
 
       - name: Apply version and roll UPM packages
-        run: bash .github/scripts/setup-project.sh "${{ inputs.project }}" "${{ inputs.version }}"
+        run: bash .github/scripts/set-unity-version.sh "${{ inputs.project }}" "${{ inputs.version }}"
 
       - name: Commit
         run: |
