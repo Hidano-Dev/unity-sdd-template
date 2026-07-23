@@ -55,18 +55,17 @@ jobs:
 
       # ── ② 同梱プロジェクトをリポジトリ名にリネーム ─────────
       #    ディレクトリ名 (git mv) + ProjectSettings の productName
-      #    再実行 (デバッグ) 時はリネーム済みならスキップして冪等にする
+      #    再実行 (デバッグ) 時はリネーム済みでも冪等に動く
       - name: Rename template project
         run: |
           if [ -d "$TEMPLATE_DIR" ]; then
-            if [ "$PROJECT_DIR" != "$TEMPLATE_DIR" ]; then
-              git mv "$TEMPLATE_DIR" "$PROJECT_DIR"
-            fi
-          elif [ ! -d "$PROJECT_DIR" ]; then
+            bash .github/scripts/rename-project.sh "$TEMPLATE_DIR" "$PROJECT_DIR"
+          elif [ -d "$PROJECT_DIR" ]; then
+            bash .github/scripts/rename-project.sh "$PROJECT_DIR" "$PROJECT_DIR"
+          else
             echo "::error::'$TEMPLATE_DIR' も '$PROJECT_DIR' も見つかりません。テンプレートの同梱プロジェクトを確認してください"
             exit 1
           fi
-          bash .github/scripts/set-product-name.sh "$PROJECT_DIR" "$PROJECT_DIR"
 
       # ── ③ 標準バージョンへの切り替え (差分がある時だけ) ─────
       #    ProjectVersion.txt + manifest.json 公式パッケージの適合更新
@@ -80,7 +79,7 @@ jobs:
           fi
 
       # ── ④ コミット & 初期化系ワークフローの自己削除 ────────
-      #    ※ set-unity-version.yml / set-product-name.yml /
+      #    ※ set-unity-version.yml / set-project-name.yml /
       #      add-unity-project.yml / scripts は残す
       - name: Commit and cleanup
         run: |

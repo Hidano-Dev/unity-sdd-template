@@ -23,13 +23,13 @@ ProjectVersion.txt の書き換えと、manifest.json 内の公式 UPM パッケ
 
 > **注意**: 開発が進んだ後に大きくバージョンを下げると `Assets/` 内のシーン・プレハブに非互換が起きる可能性があります。その場合はブランチで検証してから main に取り込んでください。
 
-## プロダクト名を変更したい場合
+## プロジェクト名を変更したい場合
 
-1. Actions タブ →「**Set Product Name**」→「Run workflow」
-2. プロジェクトディレクトリ名と新しいプロダクト名を入力して実行
-3. 完了後に `git pull`
+1. Actions タブ →「**Set Project Name**」→「Run workflow」
+2. 新しいプロジェクト名を入力して実行 (1 つの入力でディレクトリ名と ProjectSettings.asset の productName の両方が変わります)
+3. 完了後に `git pull` し、Unity Hub で新しいディレクトリを「Add project from disk」で指定し直す
 
-ProjectSettings.asset の productName だけが書き換わります。ディレクトリ名は変わりません (変更したい場合はローカルで `git mv` してください)。
+対象はリポジトリ直下の Unity プロジェクトが自動検出されます。プロジェクトを複数追加している場合は自動判別できずエラーで停止するため、その場合はローカルで `git mv` と productName の編集を行ってください。
 
 ## プロジェクトを追加したい場合
 
