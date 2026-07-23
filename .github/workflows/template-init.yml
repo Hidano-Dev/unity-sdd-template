@@ -1,0 +1,69 @@
+# =============================================================================
+# テンプレート初期化ワークフロー
+# -----------------------------------------------------------------------------
+# テンプレートから新規リポジトリを生成した際の最初の push で 1 回だけ実行され、
+#   1. cc-sdd のセットアップ (claude-agent / codex-skills, 日本語) ※リポジトリ直下
+#   2. 初期プロジェクトディレクトリ (リポジトリ名) を作成し、
+#      標準バージョンの ProjectVersion.txt と適合 UPM の manifest.json を生成
+#   3. 初期化系ワークフローの削除・README の差し替え
+# を行い、結果を "chore: initialize from template" としてコミットする。
+#
+# デバッグ: workflow_dispatch で手動実行した場合は自己削除をスキップする。
+# =============================================================================
+name: Template Init
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # デバッグ用 (自己削除しない)
+
+env:
+  # ─────────────────────────────────────────────
+  # 標準 Unity バージョン (ステークホルダー標準の安定版)
+  # テンプレートの標準を変えたい時はここだけ書き換える
+  # ─────────────────────────────────────────────
+  UNITY_VERSION: 2022.3.55f1
+  # 初期プロジェクトのディレクトリ名 (既定はリポジトリ名)
+  PROJECT_DIR: ${{ github.event.repository.name }}
+
+jobs:
+  init:
+    # テンプレートリポジトリ自身では push で発火させない (手動実行のみ許可)
+    if: github.event.repository.is_template == false || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # ── ① cc-sdd セットアップ (リポジトリ直下) ─────────────
+      - name: Setup cc-sdd
+        run: |
+          npx -y --registry https://registry.npmjs.org/ cc-sdd@latest --claude-agent --lang ja
+          npx -y --registry https://registry.npmjs.org/ cc-sdd@latest --codex-skills --lang ja
+
+      # ── ② 初期プロジェクトの骨組み生成 ─────────────────────
+      #    Assets(.gitkeep)/Packages/ProjectSettings + ProjectVersion + manifest
+      - name: Scaffold initial project
+        run: bash .github/scripts/setup-project.sh "$PROJECT_DIR" "$UNITY_VERSION"
+
+      # ── ③ コミット & 初期化系ワークフローの自己削除 ────────
+      #    ※ set-unity-version.yml / add-unity-project.yml / scripts は残す
+      - name: Commit and cleanup
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            rm -f .github/workflows/template-init.yml
+            rm -f .github/workflows/unity-versions-update.yml
+            # テンプレート専用 README を生成先用に差し替え
+            mv -f .github/PROJECT_README.md README.md
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: initialize from template"
+          git push
