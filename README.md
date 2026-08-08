@@ -35,12 +35,14 @@ Unity Editor は運用安定化のため標準バージョン (ステークホ�
 │   ├─ Packages/manifest.json          … 手動キュレーションのパッケージ構成 + scopedRegistries
 │   └─ ProjectSettings/                … ProjectSettings.asset, ProjectVersion.txt ほか
 ├─ .gitignore                          … Unity 生成物の除外 (全プロジェクトに適用)
+├─ CLAUDE.md                           … 開発メモ (CLI 起動時の -automated など。生成先にもコピーされる)
 └─ README.md                          … 本書 (テンプレート専用。生成先では上記に置換される)
 
 (生成されたリポジトリ ※初期化後)
 ├─ .github/                            … 常駐ワークフロー・スクリプト・TSV
 ├─ <リポジトリ名>/                      … TemplateProject のリネーム (以後 Actions で追加可能)
 ├─ .gitignore
+├─ CLAUDE.md                           … 開発メモ (テンプレートからコピー)
 └─ README.md                           … 生成先用スリム README
 ```
 
