@@ -2,7 +2,8 @@
 # テンプレート初期化ワークフロー
 # -----------------------------------------------------------------------------
 # テンプレートから新規リポジトリを生成した際の最初の push で 1 回だけ実行され、
-#   1. cc-sdd のセットアップ (claude-agent / codex-skills, 日本語) ※リポジトリ直下
+#   1. orchestration-development-template の最新 main から SDD ワークフロー一式
+#      (.claude / .codex / .kiro / .agents / AGENTS.md) を取り込み ※リポジトリ直下
 #   2. 同梱の設定済みプロジェクト (TemplateProject) をリポジトリ名にリネームし、
 #      ProjectSettings の productName もリポジトリ名へ書き換え
 #   3. 標準バージョン (env: UNITY_VERSION) が同梱プロジェクトのバージョンと
@@ -32,6 +33,8 @@ env:
   TEMPLATE_DIR: TemplateProject
   # 初期プロジェクトのディレクトリ名 (既定はリポジトリ名)
   PROJECT_DIR: ${{ github.event.repository.name }}
+  # SDD ワークフロー一式の取り込み元 (orchestration-sync.yml と揃えること)
+  ORCHESTRATION_REPO: Hidano-Dev/orchestration-development-template
 
 jobs:
   init:
@@ -43,15 +46,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      # ── ① cc-sdd セットアップ (リポジトリ直下) ─────────────
-      - name: Setup cc-sdd
+      # ── ① orchestration アセット取り込み (リポジトリ直下) ────
+      #    kiro commands/agents・dev-orchestrator skill・Codex skills・
+      #    .kiro settings を orchestration リポジトリの最新 main から取り込む。
+      #    ルート CLAUDE.md はコピー対象外 (テンプレート側 CLAUDE.md が
+      #    @.claude/rules/sdd-workflow.md の import 行で参照する)。
+      - name: Import orchestration assets
         run: |
-          npx -y --registry https://registry.npmjs.org/ cc-sdd@latest --claude-agent --lang ja
-          npx -y --registry https://registry.npmjs.org/ cc-sdd@latest --codex-skills --lang ja
+          git clone --depth 1 "https://github.com/${ORCHESTRATION_REPO}.git" /tmp/orch
+          for p in .claude .codex .kiro .agents AGENTS.md; do
+            cp -rf "/tmp/orch/$p" ./
+          done
+          rm -rf /tmp/orch
 
       # ── ② 同梱プロジェクトをリポジトリ名にリネーム ─────────
       #    ディレクトリ名 (git mv) + ProjectSettings の productName
@@ -80,7 +86,7 @@ jobs:
 
       # ── ④ コミット & 初期化系ワークフローの自己削除 ────────
       #    ※ set-unity-version.yml / set-project-name.yml /
-      #      add-unity-project.yml / scripts は残す
+      #      add-unity-project.yml / orchestration-sync.yml / scripts は残す
       - name: Commit and cleanup
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
