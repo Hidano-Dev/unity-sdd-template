@@ -4,7 +4,7 @@
 
 ## 1. 概要
 
-GitHub のテンプレートリポジトリ機能を使い、新規 Unity プロジェクトのリポジトリを自動セットアップする仕組みです。テンプレートには**設定済みの Unity プロジェクト (`TemplateProject/`)** を同梱しており、パッケージ構成 (manifest.json の手動キュレーション・scopedRegistries)・ProjectSettings・URP 設定などをそのまま引き継ぎます。鮮度が必要なもの (cc-sdd、Unity の changeset、バージョン切替時の UPM 適合解決) はリポジトリ生成時の GitHub Actions で解決します。
+GitHub のテンプレートリポジトリ機能を使い、新規 Unity プロジェクトのリポジトリを自動セットアップする仕組みです。テンプレートには**設定済みの Unity プロジェクト (`TemplateProject/`)** を同梱しており、パッケージ構成 (manifest.json の手動キュレーション・scopedRegistries)・ProjectSettings・URP 設定などをそのまま引き継ぎます。鮮度が必要なもの (SDD ワークフロー一式、Unity の changeset、バージョン切替時の UPM 適合解決) はリポジトリ生成時の GitHub Actions で解決します。SDD ワークフロー一式 (kiro commands / dev-orchestrator skill / Codex skills / .kiro settings) は [orchestration-development-template](https://github.com/Hidano-Dev/orchestration-development-template) で一元管理しており、生成時に最新の main が取り込まれます。
 
 リポジトリは**マルチプロジェクト構成**を前提とします。リポジトリ直下に Assets 等は置かず、プロジェクトごとにディレクトリを設けます。初期化時には同梱の `TemplateProject/` が**リポジトリ名にリネーム** (ディレクトリ名 + ProjectSettings の productName) され、以後は Actions からプロジェクトの追加・バージョン変更・プロジェクト名変更を実行できます。
 
@@ -20,7 +20,8 @@ Unity Editor は運用安定化のため標準バージョン (ステークホ�
 │   │   ├─ template-init.yml           … 生成時に 1 回だけ走る初期化 (実行後に自己削除)
 │   │   ├─ set-unity-version.yml       … プロジェクト単位のバージョン変更 (生成先に常駐)
 │   │   ├─ set-project-name.yml        … プロジェクト名の変更 (ディレクトリ + productName。生成先に常駐)
-│   │   └─ add-unity-project.yml       … プロジェクト追加 (生成先に常駐)
+│   │   ├─ add-unity-project.yml       … プロジェクト追加 (生成先に常駐)
+│   │   └─ orchestration-sync.yml      … SDD ワークフロー一式の再取り込み (生成先に常駐)
 │   ├─ scripts/
 │   │   ├─ resolve-changeset.sh        … Unity changeset の解決 (TSV → 公式 API。常駐)
 │   │   ├─ set-unity-version.sh        … 既存プロジェクトのバージョン切替 (常駐)
@@ -35,14 +36,17 @@ Unity Editor は運用安定化のため標準バージョン (ステークホ�
 │   ├─ Packages/manifest.json          … 手動キュレーションのパッケージ構成 + scopedRegistries
 │   └─ ProjectSettings/                … ProjectSettings.asset, ProjectVersion.txt ほか
 ├─ .gitignore                          … Unity 生成物の除外 (全プロジェクトに適用)
-├─ CLAUDE.md                           … 開発メモ (CLI 起動時の -automated など。生成先にもコピーされる)
+├─ CLAUDE.md                           … 開発メモ (CLI 起動時の -automated など。生成先にもコピーされる。
+│                                        SDD メモは @.claude/rules/sdd-workflow.md の import 行で参照)
 └─ README.md                          … 本書 (テンプレート専用。生成先では上記に置換される)
 
 (生成されたリポジトリ ※初期化後)
 ├─ .github/                            … 常駐ワークフロー・スクリプト・TSV
+├─ .claude/ .codex/ .kiro/ .agents/    … SDD ワークフロー一式 (orchestration から取り込み)
 ├─ <リポジトリ名>/                      … TemplateProject のリネーム (以後 Actions で追加可能)
 ├─ .gitignore
-├─ CLAUDE.md                           … 開発メモ (テンプレートからコピー)
+├─ AGENTS.md                           … Codex 用プロジェクトメモリ (orchestration から取り込み)
+├─ CLAUDE.md                           … 開発メモ (テンプレートからコピー。SDD メモを import 参照)
 └─ README.md                           … 生成先用スリム README
 ```
 
@@ -58,12 +62,10 @@ Unity Editor は運用安定化のため標準バージョン (ステークホ�
 
 テンプレートから新規リポジトリを生成すると、その最初の push をトリガーに実行されます。処理内容は次の 4 つです。
 
-1. **cc-sdd セットアップ (リポジトリ直下)** — 以下の 2 コマンドを実行します (レジストリ明示指定つき)。
-   - `npx -y --registry https://registry.npmjs.org/ cc-sdd@latest --claude-agent --lang ja`
-   - `npx -y --registry https://registry.npmjs.org/ cc-sdd@latest --codex-skills --lang ja`
+1. **SDD ワークフロー一式の取り込み (リポジトリ直下)** — [orchestration-development-template](https://github.com/Hidano-Dev/orchestration-development-template) の最新 main を shallow clone し、`.claude/` `.codex/` `.kiro/` `.agents/` `AGENTS.md` を上書きコピーします。ルート `CLAUDE.md` はコピー対象外で、テンプレート側 `CLAUDE.md` 内の `@.claude/rules/sdd-workflow.md` import 行から SDD メモが参照されます。取り込み元は `env: ORCHESTRATION_REPO` で変更できます。
 2. **同梱プロジェクトのリネーム** — `rename-project.sh` で `TemplateProject/` をリポジトリ名へ `git mv` し、ProjectSettings の productName もリポジトリ名に書き換えます。名前を変えたい場合は、初期化後に Set Project Name を実行するか `env: PROJECT_DIR` を書き換えます。
 3. **標準バージョンへの切り替え (差分がある時だけ)** — `env: UNITY_VERSION` が同梱プロジェクトの ProjectVersion.txt と異なる場合のみ、`set-unity-version.sh` で ProjectVersion.txt を書き換え、manifest.json の公式パッケージを適合版へその場更新します。**同じバージョンなら何も変換されず、手動キュレーション済みの manifest.json がそのまま使われます。**
-4. **自己削除とコミット** — `template-init.yml` と `unity-versions-update.yml` を削除し、テンプレート専用の README を生成先用 (`.github/PROJECT_README.md`) に差し替えたうえで、全変更を `chore: initialize from template` としてコミット・push します。`set-unity-version.yml` / `set-project-name.yml` / `add-unity-project.yml` / scripts は以後も使うため残します。
+4. **自己削除とコミット** — `template-init.yml` と `unity-versions-update.yml` を削除し、テンプレート専用の README を生成先用 (`.github/PROJECT_README.md`) に差し替えたうえで、全変更を `chore: initialize from template` としてコミット・push します。`set-unity-version.yml` / `set-project-name.yml` / `add-unity-project.yml` / `orchestration-sync.yml` / scripts は以後も使うため残します。
 
 採用された Unity バージョンとプロジェクトディレクトリは Actions の実行サマリーに表示されます。
 
@@ -85,7 +87,16 @@ Actions タブから手動実行し、リポジトリ直下の Unity プロジ�
 
 Actions タブから手動実行し、リポジトリ直下に新しい Unity プロジェクトディレクトリ (`Assets/.gitkeep`, `Packages/manifest.json`, `ProjectSettings/ProjectVersion.txt`) を追加します。バージョン指定は Set Unity Version と同じ流儀で、同名ディレクトリが既に存在する場合はエラーで停止します。同梱 TemplateProject のコピーではなく最小構成の骨組みです (対象パッケージは `resolve-upm.sh` の `PACKAGES` 変数で定義)。
 
-### 3.6 共通スクリプト
+### 3.6 orchestration-sync.yml (生成先に常駐)
+
+Actions タブから手動実行し、orchestration-development-template の最新 main から SDD ワークフロー一式 (`.claude/` `.codex/` `.kiro/` `.agents/` `AGENTS.md`) を取り込み直します。差分がある時だけ `chore: sync orchestration assets` としてコミットします。
+
+- ルート `CLAUDE.md` には触れないため、プロジェクト固有の開発メモは影響を受けません。
+- コピーはファイル単位の上書きマージです。プロジェクト側で独自に追加したファイル (自作 skill 等) は残りますが、orchestration 側で**削除**されたファイルは自動では消えません (必要なら手動で削除)。
+- 定期的に追従したい場合はワークフロー内のコメントアウトされた `schedule` を有効化します。
+- `is_template == false` の条件により、テンプレートリポジトリ自身では空振りします (テンプレートには SDD 実体を置かない方針のため)。
+
+### 3.7 共通スクリプト
 
 | スクリプト | 役割 | 呼び出し元 |
 |---|---|---|
@@ -103,7 +114,7 @@ Actions タブから手動実行し、リポジトリ直下に新しい Unity �
 ### 4.1 新規リポジトリの開始
 
 1. テンプレートリポジトリで「Use this template」→「Create a new repository」。
-2. Actions タブで「Template Init」の完了 (緑) を確認する。数分で cc-sdd 設定が揃い、同梱プロジェクトがリポジトリ名にリネーム (ディレクトリ + productName) された初期化コミットが積まれます。
+2. Actions タブで「Template Init」の完了 (緑) を確認する。数分で SDD ワークフロー一式が揃い、同梱プロジェクトがリポジトリ名にリネーム (ディレクトリ + productName) された初期化コミットが積まれます。
 3. 初期化コミットが積まれた**後に** clone する (先に clone した場合は pull)。
 4. Unity Hub の「Add project from disk」で**プロジェクトディレクトリ** (リポジトリ直下ではない) を指定して開く。標準バージョンが未インストールなら Hub がインストールを案内します (changeset 入りなので正確なビルドに誘導されます)。
 5. 初回起動で生成される `Packages/packages-lock.json` をコミットしておくと、メンバー間でパッケージ解決が揃います。
@@ -137,6 +148,7 @@ Actions タブから手動実行し、リポジトリ直下に新しい Unity �
 - **同梱プロジェクトの更新**: `TemplateProject/` を Unity で直接開いて編集し、コミットします (パッケージ構成・ProjectSettings・共通アセットなど)。ここが生成先の初期状態になります。
 - **標準バージョンの変更**: `TemplateProject/` を対象バージョンの Unity で開き直してコミットするのが基本です。`template-init.yml` 冒頭の `env: UNITY_VERSION` を書き換えると、初期化時にバージョン切替 + パッケージ適合更新を自動で行うこともできます (同梱バージョンと同じ場合は何も変換されません)。
 - **プロジェクト追加時の骨組みパッケージ構成の変更**: `resolve-upm.sh` の `PACKAGES` 変数を編集します。
+- **SDD ワークフローの更新**: 本テンプレートではなく orchestration-development-template 側で行います (cc-sdd の更新取り込みや独自コマンドの改修を含む)。生成済みリポジトリは Orchestration Sync の実行で追従できます。
 - 上記以外の定期メンテナンスは不要です (TSV 更新は自動)。
 
 ## 5. 前提条件・トラブルシューティング
@@ -151,4 +163,4 @@ Actions タブから手動実行し、リポジトリ直下に新しい Unity �
 | 「〜は既に存在します」エラー | Add Unity Project で既存名を指定している。バージョン変更なら Set Unity Version を使う |
 | 「〜に対応バージョンが見つかりません」エラー | Add Unity Project で指定した Editor が古すぎて対象パッケージの適合版が存在しない。Editor バージョンか `PACKAGES` の構成を見直す |
 | 「〜の適合バージョンを解決できない / レジストリに存在しない」warning | Set Unity Version で該当パッケージだけ自動更新をスキップした (それ以外は正常に更新されている)。Editor 同梱系 (URP 等) は Unity で開いた際に調整する |
-| clone したのに cc-sdd 等が無い | 初期化コミット前に clone している。`git pull` する |
+| clone したのに SDD 設定 (`.claude/` 等) が無い | 初期化コミット前に clone している。`git pull` する |

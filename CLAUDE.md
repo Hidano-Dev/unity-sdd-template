@@ -1,5 +1,11 @@
 # 開発メモ
 
+## SDD ワークフロー
+
+@.claude/rules/sdd-workflow.md
+
+上記は [orchestration-development-template](https://github.com/Hidano-Dev/orchestration-development-template) から初期化時 (Template Init) / 同期時 (Orchestration Sync) に取り込まれる SDD ワークフローメモへの参照。テンプレートリポジトリ自体には実体が無いため、取り込み前は単に読み込まれない。
+
 ## Unity Editor をコマンドラインで起動するとき
 
 CLI から Unity Editor を起動して自動化処理（ビルド、テスト、エージェント操作など）を行う場合は、**`-automated` フラグを付ける**。
