@@ -36,7 +36,7 @@ jobs:
 
       - name: Import latest orchestration assets
         run: |
-          git clone --depth 1 "https://github.com/${ORCHESTRATION_REPO}.git" /tmp/orch
+          git clone --depth 1 --branch main --single-branch "https://github.com/${ORCHESTRATION_REPO}.git" /tmp/orch
           for p in .claude .codex .kiro .agents AGENTS.md; do
             cp -rf "/tmp/orch/$p" ./
           done
