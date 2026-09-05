@@ -10,7 +10,9 @@
 #   3. update-manifest.sh による manifest.json のその場更新
 #      (公式パッケージのみ適合版へ。サードパーティ・scopedRegistries は温存)
 #
-# 呼び出し元: template-init.yml / set-unity-version.yml
+# 呼び出し元: template-init.yml (初期化時の標準バージョン切替のみ)
+# ※ 生成後のバージョン変更は Unity Hub / ProjectVersion.txt の手編集で行う運用のため、
+#    手動実行ワークフローは提供していない。
 # プロジェクトの存在チェックは呼び出し側で行うこと。
 # =============================================================================
 set -euo pipefail

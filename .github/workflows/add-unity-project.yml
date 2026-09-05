@@ -32,7 +32,7 @@ jobs:
       - name: Validate project directory
         run: |
           if [ -e "${{ inputs.project }}" ]; then
-            echo "::error::'${{ inputs.project }}' は既に存在します。バージョン変更には Set Unity Version を使ってください"
+            echo "::error::'${{ inputs.project }}' は既に存在します。既存プロジェクトのバージョン変更は Unity Hub か ProjectVersion.txt の編集で行ってください"
             exit 1
           fi
 

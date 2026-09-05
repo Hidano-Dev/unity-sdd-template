@@ -1,15 +1,19 @@
 # =============================================================================
-# プロジェクト名変更ワークフロー
+# プロジェクトリネームワークフロー
 # -----------------------------------------------------------------------------
 # 生成されたリポジトリに常駐する。Actions タブから手動実行し、
-# リポジトリ直下の Unity プロジェクト (テンプレート同梱プロジェクト由来) の
-# ディレクトリ名と ProjectSettings.asset の productName を、
-# 入力した 1 つの名前へまとめて変更する。
-# 対象プロジェクトは自動検出する (リポジトリ直下に 1 つだけの想定)。
-# プロジェクトが複数ある場合は自動判別できないためエラーで停止する
-# (その場合はローカルで git mv + productName の編集を行うこと)。
+# リポジトリ直下の Unity プロジェクトのディレクトリ名と
+# ProjectSettings.asset の productName を、入力した 1 つの名前へまとめて変更する。
+#
+# 対象プロジェクトの選び方:
+#   - project 入力が空 (既定) → リポジトリ直下のプロジェクトを自動検出する。
+#     1 つだけなら迷わず使え、複数ある場合は候補一覧を表示してエラー停止する。
+#   - project 入力あり     → そのディレクトリを対象にする (存在しなければ候補一覧付きでエラー)。
+#
+# ※ workflow_dispatch の choice 型はリポジトリ内容から動的に生成できない
+#    (選択肢を YAML に静的に書く必要がある) ため、自動検出 + 候補提示で代替している。
 # =============================================================================
-name: Set Project Name
+name: Rename Project
 
 on:
   workflow_dispatch:
@@ -18,19 +22,25 @@ on:
         description: '新しいプロジェクト名 (ディレクトリ名と productName の両方に適用)'
         required: true
         type: string
+      project:
+        description: '対象プロジェクトのディレクトリ名 (空欄なら自動検出。複数ある場合のみ指定)'
+        required: false
+        type: string
+        default: ''
 
 jobs:
-  set-project-name:
+  rename-project:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     # 自由入力テキストはシェルへ直接展開せず env 経由で渡す
     env:
       NEW_NAME: ${{ inputs.name }}
+      TARGET: ${{ inputs.project }}
     steps:
       - uses: actions/checkout@v4
 
-      # ── リポジトリ直下の Unity プロジェクトを自動検出 ──────
+      # ── 対象プロジェクトの決定 (自動検出 or 入力検証) ──────
       - name: Detect project directory
         id: detect
         run: |
@@ -39,8 +49,16 @@ jobs:
             echo "::error::Unity プロジェクトが見つかりません"
             exit 1
           fi
+          if [ -n "$TARGET" ]; then
+            if [ ! -f "$TARGET/ProjectSettings/ProjectVersion.txt" ]; then
+              echo "::error::'$TARGET' は Unity プロジェクトとして見つかりません。候補: ${projects[*]}"
+              exit 1
+            fi
+            echo "dir=$TARGET" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ "${#projects[@]}" -gt 1 ]; then
-            echo "::error::プロジェクトが複数あるため対象を自動判別できません (${projects[*]})。ローカルで git mv と productName の編集を行ってください"
+            echo "::error::プロジェクトが複数あるため対象を自動判別できません。project 入力に次のいずれかを指定して再実行してください: ${projects[*]}"
             exit 1
           fi
           echo "dir=${projects[0]}" >> "$GITHUB_OUTPUT"
