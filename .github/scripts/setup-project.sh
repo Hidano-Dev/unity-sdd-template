@@ -10,7 +10,7 @@
 #   3. ProjectSettings/ProjectVersion.txt の生成
 #   4. resolve-upm.sh による manifest.json の生成
 #
-# 呼び出し元: add-unity-project.yml
+# 呼び出し元: add-another-project.yml
 # ディレクトリの存在チェック (新規作成のみ) は呼び出し側で行うこと。
 # =============================================================================
 set -euo pipefail

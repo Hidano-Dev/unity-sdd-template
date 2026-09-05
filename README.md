@@ -6,7 +6,7 @@
 
 GitHub のテンプレートリポジトリ機能を使い、新規 Unity プロジェクトのリポジトリを自動セットアップする仕組みです。テンプレートには**設定済みの Unity プロジェクト (`TemplateProject/`)** を同梱しており、パッケージ構成 (manifest.json の手動キュレーション・scopedRegistries)・ProjectSettings・URP 設定などをそのまま引き継ぎます。鮮度が必要なもの (SDD ワークフロー一式、Unity の changeset、バージョン切替時の UPM 適合解決) はリポジトリ生成時の GitHub Actions で解決します。SDD ワークフロー一式 (kiro commands / dev-orchestrator skill / Codex skills / .kiro settings) は [orchestration-development-template](https://github.com/Hidano-Dev/orchestration-development-template) で一元管理しており、生成時に最新の main が取り込まれます。
 
-リポジトリは**マルチプロジェクト構成**を前提とします。リポジトリ直下に Assets 等は置かず、プロジェクトごとにディレクトリを設けます。初期化時には同梱の `TemplateProject/` が**リポジトリ名にリネーム** (ディレクトリ名 + ProjectSettings の productName) され、以後は Actions から既存プロジェクトの更新 (名前・Unity バージョン) とプロジェクトの追加を実行できます。**最初のプロジェクトは初期化で自動作成されるため、Add Unity Project を実行する必要はありません** (2 つ目以降を増やすときに使います)。
+リポジトリは**マルチプロジェクト構成**を前提とします。リポジトリ直下に Assets 等は置かず、プロジェクトごとにディレクトリを設けます。初期化時には同梱の `TemplateProject/` が**リポジトリ名にリネーム** (ディレクトリ名 + ProjectSettings の productName) され、以後は Actions から既存プロジェクトの更新 (名前・Unity バージョン) とプロジェクトの追加を実行できます。**最初のプロジェクトは初期化で自動作成されるため、Add Another Project を実行する必要はありません** (名前どおり、2 つ目以降を増やすときに使います)。
 
 Unity Editor は運用安定化のため標準バージョン (ステークホルダー間で最も使われている安定版) に固定し、UPM パッケージは各プロジェクトの Editor バージョンに適合する最新版を採用します。Editor バージョンの上げ下げはプロジェクト単位で、生成後のリポジトリの Actions タブ (Update Project) から誰でも実行できます。
 
@@ -19,7 +19,7 @@ Unity Editor は運用安定化のため標準バージョン (ステークホ�
 │   │   ├─ unity-versions-update.yml   … バージョン:ハッシュ一覧の日次更新 (テンプレート側のみ稼働)
 │   │   ├─ template-init.yml           … 生成時に 1 回だけ走る初期化 (実行後に自己削除)
 │   │   ├─ update-project.yml          … 既存プロジェクトの更新 (名前 + productName / Unity バージョン。生成先に常駐)
-│   │   ├─ add-unity-project.yml       … プロジェクト追加 (生成先に常駐)
+│   │   ├─ add-another-project.yml     … 2 つ目以降のプロジェクト追加 (生成先に常駐)
 │   │   └─ orchestration-sync.yml      … SDD ワークフロー一式の再取り込み (生成先に常駐)
 │   ├─ scripts/
 │   │   ├─ resolve-changeset.sh        … Unity changeset の解決 (TSV → 公式 API。常駐)
@@ -64,7 +64,7 @@ Unity Editor は運用安定化のため標準バージョン (ステークホ�
 1. **SDD ワークフロー一式の取り込み (リポジトリ直下)** — [orchestration-development-template](https://github.com/Hidano-Dev/orchestration-development-template) の最新 main を shallow clone し、`.claude/` `.codex/` `.kiro/` `.agents/` `AGENTS.md` を上書きコピーします。ルート `CLAUDE.md` はコピー対象外で、テンプレート側 `CLAUDE.md` 内の `@.claude/rules/sdd-workflow.md` import 行から SDD メモが参照されます。取り込み元は `env: ORCHESTRATION_REPO` で変更できます。
 2. **同梱プロジェクトのリネーム** — `rename-project.sh` で `TemplateProject/` をリポジトリ名へ `git mv` し、ProjectSettings の productName もリポジトリ名に書き換えます。名前を変えたい場合は、初期化後に Update Project を実行するか `env: PROJECT_DIR` を書き換えます。
 3. **標準バージョンへの切り替え (差分がある時だけ)** — `env: UNITY_VERSION` が同梱プロジェクトの ProjectVersion.txt と異なる場合のみ、`set-unity-version.sh` で ProjectVersion.txt を書き換え、manifest.json の公式パッケージを適合版へその場更新します。**同じバージョンなら何も変換されず、手動キュレーション済みの manifest.json がそのまま使われます。**
-4. **自己削除とコミット** — `template-init.yml` と `unity-versions-update.yml` を削除し、テンプレート専用の README を生成先用 (`.github/PROJECT_README.md`) に差し替えたうえで、全変更を `chore: initialize from template` としてコミット・push します。`update-project.yml` / `add-unity-project.yml` / `orchestration-sync.yml` / scripts は以後も使うため残します。
+4. **自己削除とコミット** — `template-init.yml` と `unity-versions-update.yml` を削除し、テンプレート専用の README を生成先用 (`.github/PROJECT_README.md`) に差し替えたうえで、全変更を `chore: initialize from template` としてコミット・push します。`update-project.yml` / `add-another-project.yml` / `orchestration-sync.yml` / scripts は以後も使うため残します。
 
 採用された Unity バージョンとプロジェクトディレクトリは Actions の実行サマリーに表示されます。
 
@@ -83,7 +83,7 @@ Actions タブから手動実行し、リポジトリ直下の**既存** Unity �
 
 > **補足**: GitHub の `workflow_dispatch` はドロップダウン (`type: choice`) の選択肢を YAML に静的に書く必要があり、リポジトリ内のディレクトリから動的に生成できません。選択肢を自動更新するにはワークフローファイル自体を Actions から書き換える必要があり、それは `GITHUB_TOKEN` では拒否される (PAT が必要) ため、自動検出 + 候補提示で代替しています。
 
-### 3.4 add-unity-project.yml (生成先に常駐)
+### 3.4 add-another-project.yml (生成先に常駐)
 
 Actions タブから手動実行し、リポジトリ直下に新しい Unity プロジェクトディレクトリ (`Assets/.gitkeep`, `Packages/manifest.json`, `ProjectSettings/ProjectVersion.txt`) を追加します。changeset は TSV → API の順で自動解決するため、**利用者がハッシュを調べる必要はありません**。存在しないバージョン (タイポ含む) はエラーで停止し、同名ディレクトリが既に存在する場合もエラーで停止します。同梱 TemplateProject のコピーではなく最小構成の骨組みです (対象パッケージは `resolve-upm.sh` の `PACKAGES` 変数で定義)。
 
@@ -106,7 +106,7 @@ Actions タブから手動実行し、orchestration-development-template の最�
 | `set-unity-version.sh <ディレクトリ> <バージョン>` | 既存プロジェクトの ProjectVersion.txt 書き換え + manifest その場更新 | template-init.yml / update-project.yml |
 | `update-manifest.sh <バージョン> <ディレクトリ>` | 既存 manifest.json の公式パッケージのみを Editor 適合版へ書き換え (再生成しない) | set-unity-version.sh |
 | `rename-project.sh <現ディレクトリ> <新名>` | ディレクトリ名 (git mv) + productName の一括リネーム (同名なら productName のみ) | template-init.yml / update-project.yml |
-| `setup-project.sh <ディレクトリ> <バージョン>` | 新規プロジェクトの骨組み構成 (Assets/Packages/ProjectSettings) | add-unity-project.yml |
+| `setup-project.sh <ディレクトリ> <バージョン>` | 新規プロジェクトの骨組み構成 (Assets/Packages/ProjectSettings) | add-another-project.yml |
 | `resolve-upm.sh <バージョン> <ディレクトリ>` | 骨組み用 manifest.json を `PACKAGES` 変数の構成で生成 | setup-project.sh |
 
 パッケージの適合判定は共通で、Unity 公式レジストリのメタデータにある要求最小 Editor バージョン (`unity` フィールド) を参照して「対象 Editor で使える中で最も新しい安定版」を選定します。プレリリース版 (-pre / -exp) は除外します。
@@ -142,7 +142,7 @@ Actions タブから手動実行し、orchestration-development-template の最�
 
 最初のプロジェクトは初期化時にリポジトリ名で自動作成されているため、この手順は不要です。別のプロジェクトを増やしたいときだけ実行します。
 
-1. Actions タブ →「Add Unity Project」→「Run workflow」。
+1. Actions タブ →「Add Another Project」→「Run workflow」。
 2. 新しいプロジェクトディレクトリ名 (既存と重複しない名前) とバージョン番号 (例: `6000.0.32f1`) を入力して実行。ハッシュは不要です。
 3. 完了後に pull し、Unity Hub でそのディレクトリを開く。
 
@@ -164,7 +164,7 @@ Actions タブから手動実行し、orchestration-development-template の最�
 | 「〜は Unity プロジェクトとして見つかりません」エラー | Update Project の `project` 入力のタイポ。エラーに表示される候補一覧から選び直す |
 | 「プロジェクトが複数あるため対象を自動判別できません」エラー | Update Project の `project` 入力が空欄で、プロジェクトが複数ある。エラーに表示される候補一覧から対象を `project` 入力に指定して再実行する |
 | 「name と version のどちらも空欄です」エラー | Update Project で変更項目を何も入力していない。少なくとも一方を入力する |
-| 「〜は既に存在します」エラー | Add Unity Project で既存名 (多くは初期化時に自動作成されたリポジトリ名のプロジェクト) を指定している。追加なら別名を指定し、既存プロジェクトの名前・バージョン変更なら Update Project を使う |
-| 「〜に対応バージョンが見つかりません」エラー | Add Unity Project で指定した Editor が古すぎて対象パッケージの適合版が存在しない。Editor バージョンか `PACKAGES` の構成を見直す |
+| 「〜は既に存在します」エラー | Add Another Project で既存名 (多くは初期化時に自動作成されたリポジトリ名のプロジェクト) を指定している。追加なら別名を指定し、既存プロジェクトの名前・バージョン変更なら Update Project を使う |
+| 「〜に対応バージョンが見つかりません」エラー | Add Another Project で指定した Editor が古すぎて対象パッケージの適合版が存在しない。Editor バージョンか `PACKAGES` の構成を見直す |
 | 「〜の適合バージョンを解決できない / レジストリに存在しない」warning | Update Project (または Template Init) のバージョン切替で該当パッケージだけ自動更新をスキップした (それ以外は正常に更新されている)。Editor 同梱系 (URP 等) は Unity で開いた際に調整する |
 | clone したのに SDD 設定 (`.claude/` 等) が無い | 初期化コミット前に clone している。`git pull` する |

@@ -1,31 +1,33 @@
 # =============================================================================
-# Unity プロジェクト追加ワークフロー
+# Unity プロジェクト追加ワークフロー (2 つ目以降)
 # -----------------------------------------------------------------------------
 # 生成されたリポジトリに常駐する。Actions タブから手動実行し、
-# リポジトリ直下に新しい Unity プロジェクトディレクトリを作成する
+# 既存プロジェクトとは別に、リポジトリ直下へ新しい Unity プロジェクト
+# ディレクトリをもう 1 つ作成する
 # (Assets/.gitkeep, ProjectVersion.txt, 適合 UPM の manifest.json)。
 # 同名ディレクトリが既に存在する場合はエラーで停止する。
 #
 # ※ 最初のプロジェクトは Template Init がリポジトリ名で自動作成しているため、
-#    このワークフローは 2 つ目以降のプロジェクトを増やすときに使う。
+#    このワークフローは 2 つ目以降のプロジェクトを増やすときにだけ使う
+#    (名前の Another はその意図)。
 #    既存プロジェクトの名前・バージョン変更は Update Project で行う。
 # =============================================================================
-name: Add Unity Project
+name: Add Another Project
 
 on:
   workflow_dispatch:
     inputs:
       project:
-        description: '新しいプロジェクトディレクトリ名 (リポジトリ直下)'
+        description: '追加するプロジェクトのディレクトリ名 (リポジトリ直下)。最初のプロジェクトはリポジトリ名で既に作成済みなので、それとは別の名前を指定'
         required: true
         type: string
       version:
-        description: 'Unityバージョン (例: 6000.0.32f1)'
+        description: '追加するプロジェクトの Unity バージョン (例: 6000.0.32f1)'
         required: true
         type: string
 
 jobs:
-  add-project:
+  add-another-project:
     runs-on: ubuntu-latest
     permissions:
       contents: write
