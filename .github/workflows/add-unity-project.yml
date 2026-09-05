@@ -5,6 +5,10 @@
 # リポジトリ直下に新しい Unity プロジェクトディレクトリを作成する
 # (Assets/.gitkeep, ProjectVersion.txt, 適合 UPM の manifest.json)。
 # 同名ディレクトリが既に存在する場合はエラーで停止する。
+#
+# ※ 最初のプロジェクトは Template Init がリポジトリ名で自動作成しているため、
+#    このワークフローは 2 つ目以降のプロジェクトを増やすときに使う。
+#    既存プロジェクトの名前・バージョン変更は Update Project で行う。
 # =============================================================================
 name: Add Unity Project
 
@@ -32,7 +36,7 @@ jobs:
       - name: Validate project directory
         run: |
           if [ -e "${{ inputs.project }}" ]; then
-            echo "::error::'${{ inputs.project }}' は既に存在します。既存プロジェクトのバージョン変更は Unity Hub か ProjectVersion.txt の編集で行ってください"
+            echo "::error::'${{ inputs.project }}' は既に存在します (最初のプロジェクトは Template Init がリポジトリ名で自動作成しています)。追加するなら別の名前を指定し、既存プロジェクトの名前・バージョン変更は Update Project を使ってください"
             exit 1
           fi
 

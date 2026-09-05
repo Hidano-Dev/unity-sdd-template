@@ -11,7 +11,7 @@
 # ※ productName の置換は環境変数経由で行うため記号入りでも安全だが、
 #    ディレクトリ名にもなるため OS で使えない文字や '/' は不可。
 #
-# 呼び出し元: template-init.yml / rename-project.yml
+# 呼び出し元: template-init.yml / update-project.yml
 # =============================================================================
 set -euo pipefail
 

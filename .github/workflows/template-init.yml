@@ -85,7 +85,7 @@ jobs:
           fi
 
       # ── ④ コミット & 初期化系ワークフローの自己削除 ────────
-      #    ※ rename-project.yml / add-unity-project.yml /
+      #    ※ update-project.yml / add-unity-project.yml /
       #      orchestration-sync.yml / scripts は残す
       - name: Commit and cleanup
         run: |
