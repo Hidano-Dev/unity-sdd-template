@@ -2,7 +2,7 @@
 # テンプレート初期化ワークフロー
 # -----------------------------------------------------------------------------
 # テンプレートから新規リポジトリを生成した際の最初の push で 1 回だけ実行され、
-#   1. orchestration-development-template の最新 main から SDD ワークフロー一式
+#   1. agentic-dev-harness の最新 main から SDD ワークフロー一式
 #      (.claude / .codex / .kiro / .agents / AGENTS.md) を取り込み ※リポジトリ直下
 #   2. 同梱の設定済みプロジェクト (TemplateProject) をリポジトリ名にリネームし、
 #      ProjectSettings の productName もリポジトリ名へ書き換え
@@ -34,7 +34,7 @@ env:
   # 初期プロジェクトのディレクトリ名 (既定はリポジトリ名)
   PROJECT_DIR: ${{ github.event.repository.name }}
   # SDD ワークフロー一式の取り込み元 (orchestration-sync.yml と揃えること)
-  ORCHESTRATION_REPO: Hidano-Dev/orchestration-development-template
+  ORCHESTRATION_REPO: Hidano-Dev/agentic-dev-harness
 
 jobs:
   init:

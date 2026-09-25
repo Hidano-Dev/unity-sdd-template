@@ -4,7 +4,7 @@
 
 ## 1. 概要
 
-GitHub のテンプレートリポジトリ機能を使い、新規 Unity プロジェクトのリポジトリを自動セットアップする仕組みです。テンプレートには**設定済みの Unity プロジェクト (`TemplateProject/`)** を同梱しており、パッケージ構成 (manifest.json の手動キュレーション・scopedRegistries)・ProjectSettings・URP 設定などをそのまま引き継ぎます。鮮度が必要なもの (SDD ワークフロー一式、Unity の changeset、バージョン切替時の UPM 適合解決) はリポジトリ生成時の GitHub Actions で解決します。SDD ワークフロー一式 (kiro commands / dev-orchestrator skill / Codex skills / .kiro settings) は [orchestration-development-template](https://github.com/Hidano-Dev/orchestration-development-template) で一元管理しており、生成時に最新の main が取り込まれます。
+GitHub のテンプレートリポジトリ機能を使い、新規 Unity プロジェクトのリポジトリを自動セットアップする仕組みです。テンプレートには**設定済みの Unity プロジェクト (`TemplateProject/`)** を同梱しており、パッケージ構成 (manifest.json の手動キュレーション・scopedRegistries)・ProjectSettings・URP 設定などをそのまま引き継ぎます。鮮度が必要なもの (SDD ワークフロー一式、Unity の changeset、バージョン切替時の UPM 適合解決) はリポジトリ生成時の GitHub Actions で解決します。SDD ワークフロー一式 (kiro commands / dev-orchestrator skill / Codex skills / .kiro settings) は [agentic-dev-harness](https://github.com/Hidano-Dev/agentic-dev-harness) で一元管理しており、生成時に最新の main が取り込まれます (Linear 駆動の自律ワーカー linear-worker も同梱。生成先で有効化する手順は agentic-dev-harness の docs/onboarding.md を参照)。
 
 リポジトリは**マルチプロジェクト構成**を前提とします。リポジトリ直下に Assets 等は置かず、プロジェクトごとにディレクトリを設けます。初期化時には同梱の `TemplateProject/` が**リポジトリ名にリネーム** (ディレクトリ名 + ProjectSettings の productName) され、以後は Actions から既存プロジェクトの更新 (名前・Unity バージョン) とプロジェクトの追加を実行できます。**最初のプロジェクトは初期化で自動作成されるため、Add Another Project を実行する必要はありません** (名前どおり、2 つ目以降を増やすときに使います)。
 
@@ -61,7 +61,7 @@ Unity Editor は運用安定化のため標準バージョン (ステークホ�
 
 テンプレートから新規リポジトリを生成すると、その最初の push をトリガーに実行されます。処理内容は次の 4 つです。
 
-1. **SDD ワークフロー一式の取り込み (リポジトリ直下)** — [orchestration-development-template](https://github.com/Hidano-Dev/orchestration-development-template) の最新 main を shallow clone し、`.claude/` `.codex/` `.kiro/` `.agents/` `AGENTS.md` を上書きコピーします。ルート `CLAUDE.md` はコピー対象外で、テンプレート側 `CLAUDE.md` 内の `@.claude/rules/sdd-workflow.md` import 行から SDD メモが参照されます。取り込み元は `env: ORCHESTRATION_REPO` で変更できます。
+1. **SDD ワークフロー一式の取り込み (リポジトリ直下)** — [agentic-dev-harness](https://github.com/Hidano-Dev/agentic-dev-harness) の最新 main を shallow clone し、`.claude/` `.codex/` `.kiro/` `.agents/` `AGENTS.md` を上書きコピーします。ルート `CLAUDE.md` はコピー対象外で、テンプレート側 `CLAUDE.md` 内の `@.claude/rules/sdd-workflow.md` import 行から SDD メモが参照されます。取り込み元は `env: ORCHESTRATION_REPO` で変更できます。
 2. **同梱プロジェクトのリネーム** — `rename-project.sh` で `TemplateProject/` をリポジトリ名へ `git mv` し、ProjectSettings の productName もリポジトリ名に書き換えます。名前を変えたい場合は、初期化後に Update Project を実行するか `env: PROJECT_DIR` を書き換えます。
 3. **標準バージョンへの切り替え (差分がある時だけ)** — `env: UNITY_VERSION` が同梱プロジェクトの ProjectVersion.txt と異なる場合のみ、`set-unity-version.sh` で ProjectVersion.txt を書き換え、manifest.json の公式パッケージを適合版へその場更新します。**同じバージョンなら何も変換されず、手動キュレーション済みの manifest.json がそのまま使われます。**
 4. **自己削除とコミット** — `template-init.yml` と `unity-versions-update.yml` を削除し、テンプレート専用の README を生成先用 (`.github/PROJECT_README.md`) に差し替えたうえで、全変更を `chore: initialize from template` としてコミット・push します。`update-project.yml` / `add-another-project.yml` / `orchestration-sync.yml` / scripts は以後も使うため残します。
@@ -91,7 +91,7 @@ Actions タブから手動実行し、リポジトリ直下に新しい Unity �
 
 ### 3.5 orchestration-sync.yml (生成先に常駐)
 
-Actions タブから手動実行し、orchestration-development-template の最新 main から SDD ワークフロー一式 (`.claude/` `.codex/` `.kiro/` `.agents/` `AGENTS.md`) を取り込み直します。差分がある時だけ `chore: sync orchestration assets` としてコミットします。
+Actions タブから手動実行し、agentic-dev-harness の最新 main から SDD ワークフロー一式 (`.claude/` `.codex/` `.kiro/` `.agents/` `AGENTS.md`) を取り込み直します。差分がある時だけ `chore: sync orchestration assets` としてコミットします。
 
 - ルート `CLAUDE.md` には触れないため、プロジェクト固有の開発メモは影響を受けません。
 - コピーはファイル単位の上書きマージです。プロジェクト側で独自に追加したファイル (自作 skill 等) は残りますが、orchestration 側で**削除**されたファイルは自動では消えません (必要なら手動で削除)。
@@ -151,7 +151,7 @@ Actions タブから手動実行し、orchestration-development-template の最�
 - **同梱プロジェクトの更新**: `TemplateProject/` を Unity で直接開いて編集し、コミットします (パッケージ構成・ProjectSettings・共通アセットなど)。ここが生成先の初期状態になります。
 - **標準バージョンの変更**: `TemplateProject/` を対象バージョンの Unity で開き直してコミットするのが基本です。`template-init.yml` 冒頭の `env: UNITY_VERSION` を書き換えると、初期化時にバージョン切替 + パッケージ適合更新を自動で行うこともできます (同梱バージョンと同じ場合は何も変換されません)。
 - **プロジェクト追加時の骨組みパッケージ構成の変更**: `resolve-upm.sh` の `PACKAGES` 変数を編集します。
-- **SDD ワークフローの更新**: 本テンプレートではなく orchestration-development-template 側で行います (cc-sdd の更新取り込みや独自コマンドの改修を含む)。生成済みリポジトリは Orchestration Sync の実行で追従できます。
+- **SDD ワークフローの更新**: 本テンプレートではなく agentic-dev-harness 側で行います (cc-sdd の更新取り込みや独自コマンドの改修を含む)。生成済みリポジトリは Orchestration Sync の実行で追従できます。
 - 上記以外の定期メンテナンスは不要です (TSV 更新は自動)。
 
 ## 5. 前提条件・トラブルシューティング
