@@ -4,7 +4,7 @@
 
 @.claude/rules/sdd-workflow.md
 
-上記は [orchestration-development-template](https://github.com/Hidano-Dev/orchestration-development-template) から初期化時 (Template Init) / 同期時 (Orchestration Sync) に取り込まれる SDD ワークフローメモへの参照。テンプレートリポジトリ自体には実体が無いため、取り込み前は単に読み込まれない。
+上記は [agentic-dev-harness](https://github.com/Hidano-Dev/agentic-dev-harness) から初期化時 (Template Init) / 同期時 (Orchestration Sync) に取り込まれる SDD ワークフローメモへの参照。テンプレートリポジトリ自体には実体が無いため、取り込み前は単に読み込まれない。
 
 ## Unity Editor をコマンドラインで起動するとき
 

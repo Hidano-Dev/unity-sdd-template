@@ -2,7 +2,7 @@
 # orchestration アセット同期ワークフロー
 # -----------------------------------------------------------------------------
 # 生成先リポジトリに常駐し、手動実行 (workflow_dispatch) で
-# orchestration-development-template の最新 main から SDD ワークフロー一式
+# agentic-dev-harness の最新 main から SDD ワークフロー一式
 # (.claude / .codex / .kiro / .agents / AGENTS.md) を取り込み直す。
 # 差分がある時だけ "chore: sync orchestration assets" としてコミットする。
 #
@@ -22,7 +22,7 @@ on:
 
 env:
   # SDD ワークフロー一式の取り込み元 (template-init.yml と揃えること)
-  ORCHESTRATION_REPO: Hidano-Dev/orchestration-development-template
+  ORCHESTRATION_REPO: Hidano-Dev/agentic-dev-harness
 
 jobs:
   sync:

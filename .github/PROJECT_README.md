@@ -40,7 +40,7 @@
 
 ## SDD ワークフロー設定を最新化したい場合
 
-kiro commands / dev-orchestrator skill などの SDD ワークフロー一式 (`.claude/` `.codex/` `.kiro/` `.agents/` `AGENTS.md`) は [orchestration-development-template](https://github.com/Hidano-Dev/orchestration-development-template) から取り込まれています。最新に追従したい場合:
+kiro commands / dev-orchestrator skill などの SDD ワークフロー一式 (`.claude/` `.codex/` `.kiro/` `.agents/` `AGENTS.md`) は [agentic-dev-harness](https://github.com/Hidano-Dev/agentic-dev-harness) から取り込まれています。最新に追従したい場合:
 
 1. Actions タブ →「**Orchestration Sync**」→「Run workflow」
 2. 完了後に `git pull` (差分がある時だけ `chore: sync orchestration assets` コミットが積まれます)
